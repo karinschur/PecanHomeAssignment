@@ -13,8 +13,8 @@ class LinearRegressionModel(BaseModel):
         self.linear_regression = LinearRegression()
 
     def fit(self):
-        train_x = self.data.train.drop('Label', axis=1)  # values converts it into a numpy array
-        train_y = self.data.train['Label']  # -1 means that calculate the dimension of rows, but have 1 column
+        train_x = self.data.train.drop(constants.label_header, axis=1)  # values converts it into a numpy array
+        train_y = self.data.train[constants.label_header]  # -1 means that calculate the dimension of rows, but have 1 column
         self.linear_regression.fit(train_x, train_y)  # perform linear regression
 
     def predict(self, pred_df: PandasDataFrame):
