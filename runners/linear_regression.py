@@ -16,8 +16,12 @@ data_after_preprocess = preprocessor()
 linear_regression_model = LinearRegressionModel(data=data_after_preprocess)
 linear_regression_model.fit()
 pred_y = linear_regression_model.predict(data_after_preprocess.val)
+pred_y_test = linear_regression_model.predict(data_after_preprocess.test)
 
 fig = px.scatter(x=pred_y, y=data_after_preprocess.val[constants.label_header])
+fig.show()
+
+fig = px.scatter(x=pred_y_test, y=data_after_preprocess.test[constants.label_header])
 fig.show()
 
 print()
