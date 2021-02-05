@@ -1,20 +1,14 @@
-from utils import utils, constants
+from typing import Union
+from pandas import DataFrame as PandasDataFrame
+
+from utils import utils
 
 
 class DataHolder:
 
-    def __init__(self, *, path_to_data: str):
-        self.train = utils.read_csv(path=f'{path_to_data}/train.csv',
-                                    schema=constants.schema)
-        self.val = utils.read_csv(path=f'{path_to_data}/val.csv',
-                                  schema=constants.schema)
-        self.test = utils.read_csv(path=f'{path_to_data}/test.csv',
-                                   schema=constants.schema)
-
-
-if __name__ == '__main__':
-    import os
-    from pathlib import Path
-    path = os.path.join(Path(os.getcwd()).parent, 'data')
-    dh = DataHolder(path_to_data=path)
-    print()
+    def __init__(self, *, train: Union[str, PandasDataFrame],
+                 val: Union[str, PandasDataFrame],
+                 test: Union[str, PandasDataFrame]):
+        self.train = utils.load_df(train)
+        self.val = utils.load_df(val)
+        self.test = utils.load_df(test)

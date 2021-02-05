@@ -1,5 +1,5 @@
 import pandas as pd
-from typing import List, Union
+from typing import List, Union, Tuple
 from pandas import DataFrame as PandasDataFrame
 
 from utils import constants
@@ -12,7 +12,9 @@ class Preprocessor:
                  remove_outliers: bool = False, remove_early_data: bool = False,
                  lag_stats: bool = False, window_sizes: List[str] = None,
                  one_hot_cols: Union[str, List[str]] = None):
-        self.data = DataHolder(path_to_data=data_path)
+        self.data = DataHolder(train=f'{data_path}/train.csv',
+                               val=f'{data_path}/val.csv',
+                               test=f'{data_path}/test.csv')
         self.remove_outliers = remove_outliers
         self.one_hot_encoding = one_hot_encoding
         self.remove_early_data = remove_early_data
@@ -21,39 +23,33 @@ class Preprocessor:
         self.one_hot_cols = one_hot_cols or constants.one_hot_cols
 
     def __call__(self, *args, **kwargs) -> DataHolder:
-        self.data.train = self.basic_feature_extraction(self.data.train)
-        self.data.val = self.basic_feature_extraction(self.data.val)
-        self.data.test = self.basic_feature_extraction(self.data.test)
+        train, last_index = self.create_date_num_col(self.data.train)
+        val, last_index = self.create_date_num_col(self.data.val, last_index)
+        test, _ = self.create_date_num_col(self.data.test, last_index)
+        train, val, test = [self.basic_feature_extraction(df) for df in [train, val, test]]
 
         if self.remove_outliers:
-            outlier_ids = [17179869190, 51539608572, 60129542923]
-            self.data.train = self.data.train[(~self.data.train[constants.pecan_id_header].isin((outlier_ids)))]
-            self.data.train = self.data.train[(self.data.train[constants.label_header] >= 0)]
+            train = train[(~train[constants.pecan_id_header]
+                           .isin(constants.outlier_ids))]
+            train, val, test = [df[df[constants.label_header] >= 0] for df in [train, val, test]]
 
         if self.lag_stats:
-            self.data.train = self.create_lag_features(self.data.train)
-            self.data.val = self.create_lag_features(self.data.val)
-            self.data.val = self.create_lag_features(self.data.val)
+            train, val, test = [self.create_lag_features(df) for df in [train, val, test]]
 
         if self.one_hot_encoding:
-            self.one_hot_encoded()
+            train, val, test = self.one_hot_encoded(train=train, val=val,
+                                                    test=test)
 
         if self.remove_early_data:
-            self.data.train = self.data.train[self.data.train['Year'] >= 2016]
+            train = train[train['Year'] >= 2016]
 
-        self.data.train = self.data.train.drop([constants.marker_header, 'Year'], axis=1)
-        self.data.train.set_index(constants.pecan_id_header)
-        self.data.val.set_index(constants.pecan_id_header)
-        self.data.test.set_index(constants.pecan_id_header)
+        train, val, test = [df.set_index(constants.pecan_id_header) for df in [train, val, test]]
+        train, val, test = [df.drop([constants.marker_header, 'Year'], axis=1) for df in [train, val, test]]
 
-        return self.data
+        return DataHolder(train=train, val=val, test=test)
 
     @staticmethod
     def basic_feature_extraction(df: PandasDataFrame) -> PandasDataFrame:
-        unique_dates = sorted(df[constants.marker_header].unique())
-        date_num_mapping = {date: i for i, date in enumerate(unique_dates)}
-        df[constants.date_num_header] = df[constants.marker_header].apply(lambda date: date_num_mapping[date])
-
         # I've seen there is a consiquencial appearance of category since it first appears.
         #  Category start appearing at different points. A good feature would be num of appearances.
         count_category_appearances = df.groupby(constants.category_header)[constants.marker_header].count()
@@ -67,26 +63,35 @@ class Preprocessor:
         df['Year'] = df[constants.marker_header].apply(lambda dt: dt.year)
         return df
 
-    def one_hot_encoded(self):
-        self.data.train = self.apply_one_hot_encoding(self.data.train,
-                                                      categorical_cols=self.one_hot_cols)
-        self.data.val = self.apply_one_hot_encoding(self.data.val,
-                                                    categorical_cols=self.one_hot_cols)
-        self.data.test = self.apply_one_hot_encoding(self.data.test,
-                                                     categorical_cols=self.one_hot_cols)
-        train_cols = set(self.data.train.columns)
-        val_missing_cols = list(train_cols - set(self.data.val.columns))
-        test_missing_cols = list(train_cols - set(self.data.test.columns))
+    @staticmethod
+    def create_date_num_col(df: PandasDataFrame, last_index: int = 0
+                            ) -> Tuple[PandasDataFrame, int]:
+        unique_dates = sorted(df[constants.marker_header].unique())
+        date_num_mapping = {date: i + last_index for i, date in enumerate(unique_dates)}
+        df[constants.date_num_header] = df[constants.marker_header].apply(lambda date: date_num_mapping[date])
+        return df, len(unique_dates) + last_index
 
-        self.data.val[val_missing_cols] = 0
-        self.data.test[test_missing_cols] = 0
+    def one_hot_encoded(self, *, train: PandasDataFrame,
+                        val: PandasDataFrame,
+                        test: PandasDataFrame
+                        ) -> Tuple[PandasDataFrame, PandasDataFrame, PandasDataFrame]:
+        train, val, test = [self.apply_one_hot_encoding(df, categorical_cols=self.one_hot_cols)
+                            for df in [train, val, test]]
+        train_cols = set(train.columns)
+        val_missing_cols = list(train_cols - set(val.columns))
+        test_missing_cols = list(train_cols - set(test.columns))
+
+        val[val_missing_cols] = 0
+        test[test_missing_cols] = 0
+
+        return train, val, test
 
     @staticmethod
     def apply_one_hot_encoding(df: PandasDataFrame, *,
                                categorical_cols: Union[str, List[str]]
                                ) -> PandasDataFrame:
         one_hot_cat = pd.get_dummies(df.set_index(constants.pecan_id_header)[categorical_cols],
-                                     prefix=constants.pecan_id_header)
+                                     prefix=constants.category_header)
         df = df.drop(categorical_cols, axis=1)
         return df.merge(one_hot_cat, left_on=constants.pecan_id_header, right_index=True)
 
@@ -111,7 +116,16 @@ class Preprocessor:
 
         df_with_lags = df.groupby(constants.category_header).apply(create_lag_features)
         df_with_lags = df_with_lags.reset_index(constants.category_header)
-        return df.merge(df_with_lags, on=[constants.category_header, constants.date_num_header])
+        df = df.merge(df_with_lags, on=[constants.category_header, constants.date_num_header])
+
+        for lag in self.window_sizes:
+            df[f'label_sum_lag_{lag}_months'] = df[f'label_sum_lag_{lag}_months'].fillna(df['Label'])
+            df[f'label_avg_lag_{lag}_months'] = df[f'label_avg_lag_{lag}_months'].fillna(df['Label'])
+            df[f'label_std_lag_{lag}_months'] = df[f'label_std_lag_{lag}_months'].fillna(df['Label'])
+            if lag == 2:
+                df[f'label_diff_lag_{lag}_months'] = df[f'label_diff_lag_{lag}_months'].fillna(df['Label'])
+
+        return df
 
 
 if __name__ == '__main__':
