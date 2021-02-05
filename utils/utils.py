@@ -1,15 +1,13 @@
 import pandas as pd
-from typing import Tuple, List
+from typing import List, Union
 from pandas import DataFrame as PandasDataFrame
 
+from utils import constants
 
-def load_data(path_to_data: str, schema: List[str]
-              ) -> Tuple[PandasDataFrame, PandasDataFrame, PandasDataFrame]:
-    train_df = read_csv(f'{path_to_data}/train.csv', schema)
-    val_df = read_csv(f'{path_to_data}/val.csv', schema)
-    test_df = read_csv(f'{path_to_data}/test.csv', schema)
 
-    return train_df, val_df, test_df
+def load_df(df: Union[str, PandasDataFrame]) -> PandasDataFrame:
+    return read_csv(path=df, schema=constants.schema) \
+        if isinstance(df, str) else df
 
 
 def read_csv(path: str, schema: List[str]) -> PandasDataFrame:

@@ -9,3 +9,4 @@ schema = [marker_header, label_header, pecan_id_header, category_header]
 
 window_sizes = [2, 3]
 one_hot_cols = category_header
+outlier_ids = [17179869190, 51539608572, 60129542923]
