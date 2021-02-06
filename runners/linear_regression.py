@@ -9,6 +9,7 @@ from utils import utils
 from preprocess.data_holder import DataHolder
 from preprocess.data_preprocess import Preprocessor
 
+
 load_from_data = True
 preprocessors_names = ['no_lags', 'lags_not_continuous', 'lags_continuous', 'with_nulls']
 path = os.path.join(Path(os.getcwd()).parent, 'data')
