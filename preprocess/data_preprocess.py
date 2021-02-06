@@ -29,22 +29,24 @@ class Preprocessor:
         train, val, test = [self.basic_feature_extraction(df) for df in [train, val, test]]
 
         if self.remove_outliers:
-            train = train[(~train[constants.pecan_id_header]
-                           .isin(constants.outlier_ids))]
+            train = train[(~train[constants.pecan_id_header].isin(constants.outlier_ids))]
             train, val, test = [df[df[constants.label_header] >= 0] for df in [train, val, test]]
 
         if self.lag_stats:
-            train, val, test = [self.create_lag_features(df) for df in [train, val, test]]
+            # train, val, test = [self.create_lag_features(df) for df in [train, val, test]]
+            train, val, test = self.correct_lags(train=train, val=val, test=test)
 
         if self.one_hot_encoding:
-            train, val, test = self.one_hot_encoded(train=train, val=val,
-                                                    test=test)
+            train, val, test = self.one_hot_encoded(train=train, val=val, test=test)
 
         if self.remove_early_data:
             train = train[train['Year'] >= 2016]
 
         train, val, test = [df.set_index(constants.pecan_id_header) for df in [train, val, test]]
         train, val, test = [df.drop([constants.marker_header, 'Year'], axis=1) for df in [train, val, test]]
+
+        test = test[train.columns]
+        val = val[train.columns]
 
         return DataHolder(train=train, val=val, test=test)
 
@@ -85,6 +87,41 @@ class Preprocessor:
         test[test_missing_cols] = 0
 
         return train, val, test
+
+    def correct_lags(self, *, train: PandasDataFrame,
+                     val: PandasDataFrame,
+                     test: PandasDataFrame
+                     ) -> Tuple[PandasDataFrame, PandasDataFrame, PandasDataFrame]:
+        train_return_df = self.create_lag_features(train)
+        val_return_df = self.align_following_dfs(first_df=train, second_df=val)
+        test_return_df = self.align_following_dfs(first_df=val, second_df=test)
+        return train_return_df, val_return_df, test_return_df
+
+    def align_following_dfs(self, first_df: PandasDataFrame,
+                            second_df: PandasDataFrame) -> PandasDataFrame:
+        max_window_size = max(self.window_sizes)
+        first_max_date_num = max(first_df[constants.date_num_header])
+        second_df_categories = second_df[constants.category_header].unique()
+        first_df = first_df[first_df[constants.category_header].isin(second_df_categories)]
+        max_date_by_category = first_df.groupby(constants.category_header).agg({constants.date_num_header: 'max'})
+        max_date_by_category = max_date_by_category[
+            max_date_by_category[constants.date_num_header] == first_max_date_num]
+        valid_categories = list(max_date_by_category.index)
+        first_df = first_df[first_df[constants.category_header].isin(valid_categories)]
+        date_num_count = first_df.groupby(constants.category_header).agg({constants.date_num_header: 'count'})
+        date_num_count = date_num_count[date_num_count[constants.date_num_header] >= max_window_size]
+        valid_categories = list(date_num_count.index)
+        first_df = first_df[first_df[constants.category_header].isin(valid_categories)]
+        first_df = first_df[first_df[constants.date_num_header].isin(range(first_max_date_num + 1)[-max_window_size:])]
+        first_df = first_df.append(second_df[second_df[constants.date_num_header] == first_max_date_num + 1])
+        first_df = self.create_lag_features(first_df)
+        second_first_date = first_df[first_df[constants.date_num_header] == first_max_date_num + 1]
+
+        return_df = self.create_lag_features(second_df)
+        return_df = return_df[return_df[constants.date_num_header] > first_max_date_num + 1]
+        return_df = return_df.append(second_first_date)
+
+        return return_df
 
     @staticmethod
     def apply_one_hot_encoding(df: PandasDataFrame, *,
