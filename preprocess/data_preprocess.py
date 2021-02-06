@@ -11,7 +11,7 @@ class Preprocessor:
     def __init__(self, *, data_path: str, one_hot_encoding: bool = False,
                  remove_outliers: bool = False, remove_early_data: bool = False,
                  lag_stats: bool = False, lag_stats_continuous: bool = False,
-                 window_sizes: List[str] = None,
+                 window_sizes: List[str] = None, fill_na: bool = False,
                  one_hot_cols: Union[str, List[str]] = None):
         self.data = DataHolder(train=f'{data_path}/train.csv',
                                val=f'{data_path}/val.csv',
@@ -21,6 +21,7 @@ class Preprocessor:
         self.remove_early_data = remove_early_data
         self.lag_stats = lag_stats
         self.lag_stats_continuous = lag_stats_continuous
+        self.fill_na = fill_na
         self.window_sizes = window_sizes or constants.window_sizes
         self.one_hot_cols = one_hot_cols or constants.one_hot_cols
 
@@ -159,12 +160,13 @@ class Preprocessor:
         df_with_lags = df_with_lags.reset_index(constants.category_header)
         df = df.merge(df_with_lags, on=[constants.category_header, constants.date_num_header])
 
-        for lag in self.window_sizes:
-            df[f'label_sum_lag_{lag}_months'] = df[f'label_sum_lag_{lag}_months'].fillna(df['Label'])
-            df[f'label_avg_lag_{lag}_months'] = df[f'label_avg_lag_{lag}_months'].fillna(df['Label'])
-            df[f'label_std_lag_{lag}_months'] = df[f'label_std_lag_{lag}_months'].fillna(df['Label'])
-            if lag == 2:
-                df[f'label_diff_lag_{lag}_months'] = df[f'label_diff_lag_{lag}_months'].fillna(df['Label'])
+        if self.fill_na:
+            for lag in self.window_sizes:
+                df[f'label_sum_lag_{lag}_months'] = df[f'label_sum_lag_{lag}_months'].fillna(df['Label'])
+                df[f'label_avg_lag_{lag}_months'] = df[f'label_avg_lag_{lag}_months'].fillna(df['Label'])
+                df[f'label_std_lag_{lag}_months'] = df[f'label_std_lag_{lag}_months'].fillna(df['Label'])
+                if lag == 2:
+                    df[f'label_diff_lag_{lag}_months'] = df[f'label_diff_lag_{lag}_months'].fillna(df['Label'])
 
         return df
 
