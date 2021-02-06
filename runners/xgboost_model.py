@@ -1,14 +1,15 @@
+import pandas as pd
+from xgboost import XGBRegressor
 import os
-import pickle
 from pathlib import Path
+import numpy as np
+import pickle
 from typing import Dict
-
-import plotly.express as px
-
-from utils import utils
 from preprocess.data_holder import DataHolder
+
 from preprocess.data_preprocess import Preprocessor
-from sklearn.linear_model import LinearRegression
+import plotly.express as px
+from utils import constants
 
 
 load_from_data = True
@@ -41,10 +42,13 @@ else:
     data_after_preprocessors: Dict[str, DataHolder] = {name: data for name, data in zip(preprocessors_names, preprocessors)}
 
 for (name, data), preprocessor in zip(data_after_preprocessors.items(), preprocessors_obj):
-    linear_regressor = LinearRegression()
-    linear_regressor.fit(data.train_x.append(data.val_x), data.train_y.append(data.val_y))
-
-    pred_y_test = linear_regressor.predict(data.test_x)
-
+    model = XGBRegressor()
+    model.fit(data.train_x, data.train_y,
+              eval_metric=['rmse', 'mae'],
+              eval_set=[(data.train_x, data.train_y), (data.val_x, data.val_y)],
+              verbose=True,
+              early_stopping_rounds=10)
+    pred_y = model.predict(data.test_x)
     metrics_by_category = utils.results_metrics_by_category(pred_y_test, data.test_y, preprocessor.data.test)
     utils.print_results_metrics(pred_y_test, data.test_y)
+
