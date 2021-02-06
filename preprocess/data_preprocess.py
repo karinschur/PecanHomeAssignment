@@ -10,7 +10,8 @@ class Preprocessor:
 
     def __init__(self, *, data_path: str, one_hot_encoding: bool = False,
                  remove_outliers: bool = False, remove_early_data: bool = False,
-                 lag_stats: bool = False, window_sizes: List[str] = None,
+                 lag_stats: bool = False, lag_stats_continuous: bool = False,
+                 window_sizes: List[str] = None,
                  one_hot_cols: Union[str, List[str]] = None):
         self.data = DataHolder(train=f'{data_path}/train.csv',
                                val=f'{data_path}/val.csv',
@@ -19,6 +20,7 @@ class Preprocessor:
         self.one_hot_encoding = one_hot_encoding
         self.remove_early_data = remove_early_data
         self.lag_stats = lag_stats
+        self.lag_stats_continuous = lag_stats_continuous
         self.window_sizes = window_sizes or constants.window_sizes
         self.one_hot_cols = one_hot_cols or constants.one_hot_cols
 
@@ -33,8 +35,10 @@ class Preprocessor:
             train, val, test = [df[df[constants.label_header] >= 0] for df in [train, val, test]]
 
         if self.lag_stats:
-            # train, val, test = [self.create_lag_features(df) for df in [train, val, test]]
-            train, val, test = self.correct_lags(train=train, val=val, test=test)
+            if self.lag_stats_continuous:
+                train, val, test = self.correct_lags(train=train, val=val, test=test)
+            else:
+                train, val, test = [self.create_lag_features(df) for df in [train, val, test]]
 
         if self.one_hot_encoding:
             train, val, test = self.one_hot_encoded(train=train, val=val, test=test)

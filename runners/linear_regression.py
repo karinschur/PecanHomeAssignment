@@ -9,8 +9,8 @@ from models.linear_regression import LinearRegressionModel
 # Preprocess: feature extraction + feature engineering
 path = os.path.join(Path(os.getcwd()).parent, 'data')
 preprocessor = Preprocessor(data_path=path, one_hot_encoding=True,
-                            lag_stats=True, remove_outliers=True,
-                            remove_early_data=True)
+                            lag_stats=True, lag_stats_continuous=True,
+                            remove_outliers=True, remove_early_data=True)
 data_after_preprocess = preprocessor()
 
 # TODO: Data visualizations
