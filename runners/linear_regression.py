@@ -3,13 +3,11 @@ import pickle
 from pathlib import Path
 from typing import Dict
 
-import plotly.express as px
+from sklearn.linear_model import LinearRegression
 
 from utils import utils
 from preprocess.data_holder import DataHolder
 from preprocess.data_preprocess import Preprocessor
-from sklearn.linear_model import LinearRegression
-
 
 load_from_data = True
 preprocessors_names = ['no_lags', 'lags_not_continuous', 'lags_continuous', 'with_nulls']

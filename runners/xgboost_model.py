@@ -1,15 +1,12 @@
-import pandas as pd
-from xgboost import XGBRegressor
 import os
-from pathlib import Path
-import numpy as np
 import pickle
+from pathlib import Path
 from typing import Dict
-from preprocess.data_holder import DataHolder
 
+from xgboost import XGBRegressor
+
+from preprocess.data_holder import DataHolder
 from preprocess.data_preprocess import Preprocessor
-import plotly.express as px
-from utils import constants
 
 
 load_from_data = True

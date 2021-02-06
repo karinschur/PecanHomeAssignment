@@ -1,11 +1,12 @@
-import lightgbm as lgb
 import os
-from pathlib import Path
 import pickle
+from pathlib import Path
+
+import lightgbm as lgb
+import matplotlib.pyplot as plt
 
 from utils import constants
 from preprocess.data_preprocess import Preprocessor
-import matplotlib.pyplot as plt
 
 
 load_data_from_file = False
