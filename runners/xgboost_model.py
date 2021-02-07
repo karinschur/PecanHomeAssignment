@@ -49,4 +49,3 @@ for (name, data), preprocessor in zip(data_after_preprocessors.items(), preproce
     pred_y = model.predict(data.test_x)
     metrics_by_category = utils.results_metrics_by_category(pred_y, data.test_y, preprocessor.data.test)
     utils.print_results_metrics(pred_y, data.test_y)
-
