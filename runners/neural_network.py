@@ -37,4 +37,3 @@ _, accuracy = model.evaluate(data_after_preprocess.val_x, data_after_preprocess.
 predictions = model.predict(data_after_preprocess.test_x)
 fig = px.scatter(x=predictions, y=data_after_preprocess.test_y)
 fig.show()
-print()
