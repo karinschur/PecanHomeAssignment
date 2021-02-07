@@ -1,7 +1,8 @@
+import pandas as pd
 from typing import Union
 from pandas import DataFrame as PandasDataFrame
 
-from utils import utils, constants
+from utils import constants
 
 
 class DataHolder:
@@ -9,9 +10,9 @@ class DataHolder:
     def __init__(self, *, train: Union[str, PandasDataFrame],
                  val: Union[str, PandasDataFrame],
                  test: Union[str, PandasDataFrame]):
-        self.train = utils.load_df(train)
-        self.val = utils.load_df(val)
-        self.test = utils.load_df(test)
+        self.train = pd.read_csv(train)
+        self.val = pd.read_csv(val)
+        self.test = pd.read_csv(test)
 
     @property
     def train_x(self):

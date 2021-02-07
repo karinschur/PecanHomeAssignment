@@ -1,23 +1,14 @@
 import pandas as pd
 import numpy as np
-import os
-import pickle
-from pathlib import Path
-from typing import List, Union
+
+from typing import List
 from pandas import DataFrame as PandasDataFrame, Series as PandasSeries
 from sklearn.metrics import mean_squared_error, mean_absolute_error, r2_score,  mean_absolute_percentage_error
 from utils import constants
 
 
-def load_df(df: Union[str, PandasDataFrame]) -> PandasDataFrame:
-    return read_csv(path=df, schema=constants.schema) \
-        if isinstance(df, str) else df
-
-
-def read_csv(path: str, schema: List[str]) -> PandasDataFrame:
+def read_csv(path: str) -> PandasDataFrame:
     df = pd.read_csv(path)
-    if not validate_schema(df, schema):
-        raise Exception('Expected different schema')
     return df
 
 
