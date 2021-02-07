@@ -104,25 +104,34 @@ class Preprocessor:
 
     def align_following_dfs(self, first_df: PandasDataFrame,
                             second_df: PandasDataFrame) -> PandasDataFrame:
-        max_window_size = max(self.window_sizes)
-        first_max_date_num = max(first_df[constants.date_num_header])
-        second_df_categories = second_df[constants.category_header].unique()
-        first_df = first_df[first_df[constants.category_header].isin(second_df_categories)]
+        max_window_size = max(self.window_sizes)       # How many label backward to take
+        first_max_date_num = max(first_df[constants.date_num_header])   # End date of the first df
+        second_df_categories = second_df[constants.category_header].unique()    # All categories in the second
+        first_df = first_df[first_df[constants.category_header].isin(second_df_categories)]     # Take only relevant categories from the first
+
+        # Take only categories that end in the final date of the first one
         max_date_by_category = first_df.groupby(constants.category_header).agg({constants.date_num_header: 'max'})
         max_date_by_category = max_date_by_category[
             max_date_by_category[constants.date_num_header] == first_max_date_num]
         valid_categories = list(max_date_by_category.index)
         first_df = first_df[first_df[constants.category_header].isin(valid_categories)]
+
+        # Take only categories that have all (max_window_size) values in the end of the first df
         date_num_count = first_df.groupby(constants.category_header).agg({constants.date_num_header: 'count'})
         date_num_count = date_num_count[date_num_count[constants.date_num_header] >= max_window_size]
         valid_categories = list(date_num_count.index)
         first_df = first_df[first_df[constants.category_header].isin(valid_categories)]
+
+        # Take only the (max_window_size) last ones
         first_df = first_df[first_df[constants.date_num_header].isin(range(first_max_date_num + 1)[-max_window_size:])]
         first_df = first_df.append(second_df[second_df[constants.date_num_header] == first_max_date_num + 1])
-        first_df = self.create_lag_features(first_df)
-        second_first_date = first_df[first_df[constants.date_num_header] == first_max_date_num + 1]
+        first_df = self.create_lag_features(first_df)   # Create lag features using only end of the first df and the first one of the second df
 
-        return_df = self.create_lag_features(second_df)
+        second_first_date = first_df[first_df[constants.date_num_header] == first_max_date_num + 1]     # Take only the first dat of the resu
+
+        return_df = self.create_lag_features(second_df)     # Create lag features for the second df
+
+        # Replace the first date of the second df with the one calculated with the last values of the first df
         return_df = return_df[return_df[constants.date_num_header] > first_max_date_num + 1]
         return_df = return_df.append(second_first_date)
 
@@ -169,14 +178,3 @@ class Preprocessor:
                     df[f'label_diff_lag_{lag}_months'] = df[f'label_diff_lag_{lag}_months'].fillna(df['Label'])
 
         return df
-
-
-if __name__ == '__main__':
-    import os
-    from pathlib import Path
-    path = os.path.join(Path(os.getcwd()).parent, 'data')
-    x = Preprocessor(data_path=path, one_hot_encoding=True,
-                     lag_stats=True, remove_outliers=True,
-                     remove_early_data=True)
-    dh = x()
-    print()

@@ -28,7 +28,7 @@ def results_metrics_by_category(pred_y: np.array, actual_y: PandasSeries,
         mape = mean_absolute_percentage_error(df[constants.label_header], df['pred'])
         mae = mean_absolute_error(df[constants.label_header], df['pred'])
         rmse = np.sqrt(mean_squared_error(df[constants.label_header], df['pred']))
-        return pd.DataFrame(dict(r2=r2, mape=mape, mae=mae, rmse=rmse))
+        return pd.Series(dict(r2=r2, mape=mape, mae=mae, rmse=rmse))
 
     return result_df.groupby(constants.category_header).apply(metric_by_category).reset_index()
 
