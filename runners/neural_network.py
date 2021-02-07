@@ -6,7 +6,6 @@ from pathlib import Path
 import plotly.express as px
 import pickle
 
-from utils import constants
 from preprocess.data_preprocess import Preprocessor
 
 
@@ -25,26 +24,17 @@ else:
     with open(os.path.join(path, 'data_after_preprocess.pkl'), 'wb') as f:
         pickle.dump(data_after_preprocess, f)
 
-train_x = data_after_preprocess.train.drop('Label', axis=1)
-train_y = data_after_preprocess.train['Label']
-
-val_x = data_after_preprocess.val.drop('Label', axis=1)
-val_y = data_after_preprocess.val['Label']
-
-test_x = data_after_preprocess.test.drop('Label', axis=1)
-test_y = data_after_preprocess.test['Label']
-
 model = Sequential()
-model.add(Dense(400, input_dim=len(train_x.columns), activation='relu'))
+model.add(Dense(400, input_dim=len(data_after_preprocess.train_x.columns), activation='relu'))
 model.add(Dense(200, activation='relu'))
 model.add(Dense(100, activation='relu'))
 model.add(Dense(1, activation='sigmoid'))
 
 model.compile(loss=keras.losses.mean_absolute_error, optimizer='adam', metrics=['accuracy'])
-model.fit(train_x, train_y, epochs=10, batch_size=2000)
+model.fit(data_after_preprocess.train_x, data_after_preprocess.train_y, epochs=10, batch_size=2000)
 
-_, accuracy = model.evaluate(val_x, val_y)
-predictions = model.predict(test_x)
-fig = px.scatter(x=predictions, y=test_y)
+_, accuracy = model.evaluate(data_after_preprocess.val_x, data_after_preprocess.val_y)
+predictions = model.predict(data_after_preprocess.test_x)
+fig = px.scatter(x=predictions, y=data_after_preprocess.test_y)
 fig.show()
 print()
