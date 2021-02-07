@@ -30,12 +30,12 @@ preprocessors_obj = [Preprocessor(data_path=path, one_hot_encoding=True,
 if not load_from_data:
     data_after_preprocessors: Dict[str, DataHolder] = {name: pre() for name, pre in zip(preprocessors_names, preprocessors_obj)}
     for name, data in data_after_preprocessors.items():
-        with open(os.path.join(path, f'xgboost_{name}.pkl'), 'wb') as f:
+        with open(os.path.join(path, f'linear_{name}.pkl'), 'wb') as f:
             pickle.dump(data, f)
 else:
     preprocessors = []
     for name in preprocessors_names:
-        with open(os.path.join(path, f'xgboost_{name}.pkl'), 'rb') as f:
+        with open(os.path.join(path, f'linear_{name}.pkl'), 'rb') as f:
             preprocessors.append(pickle.load(f))
     data_after_preprocessors: Dict[str, DataHolder] = {name: data for name, data in zip(preprocessors_names, preprocessors)}
 
