@@ -1,10 +1,11 @@
-import keras
-from keras.models import Sequential
-from keras.layers import Dense
 import os
-from pathlib import Path
-import plotly.express as px
 import pickle
+from pathlib import Path
+
+import keras
+import plotly.express as px
+from keras.layers import Dense
+from keras.models import Sequential
 
 from preprocess.data_preprocess import Preprocessor
 
