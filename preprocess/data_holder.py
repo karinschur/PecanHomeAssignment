@@ -10,9 +10,9 @@ class DataHolder:
     def __init__(self, *, train: Union[str, PandasDataFrame],
                  val: Union[str, PandasDataFrame],
                  test: Union[str, PandasDataFrame]):
-        self.train = pd.read_csv(train)
-        self.val = pd.read_csv(val)
-        self.test = pd.read_csv(test)
+        self.train = pd.read_csv(train) if isinstance(train, str) else train
+        self.val = pd.read_csv(val) if isinstance(val, str) else val
+        self.test = pd.read_csv(test) if isinstance(test, str) else test
 
     @property
     def train_x(self):
