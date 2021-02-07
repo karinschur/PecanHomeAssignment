@@ -10,7 +10,7 @@ from preprocess.data_holder import DataHolder
 from preprocess.data_preprocess import Preprocessor
 
 
-load_from_data = True
+load_from_data = False
 preprocessors_names = ['no_lags', 'lags_not_continuous', 'lags_continuous', 'with_nulls']
 path = os.path.join(Path(os.getcwd()).parent, 'data')
 preprocessors_obj = [Preprocessor(data_path=path, one_hot_encoding=True,
