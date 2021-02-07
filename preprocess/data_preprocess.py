@@ -25,7 +25,7 @@ class Preprocessor:
         self.window_sizes = window_sizes or constants.window_sizes
         self.one_hot_cols = one_hot_cols or constants.one_hot_cols
 
-    def __call__(self, *args, **kwargs) -> DataHolder:
+    def __call__(self) -> DataHolder:
         train, last_index = self.create_date_num_col(self.data.train)
         val, last_index = self.create_date_num_col(self.data.val, last_index)
         test, _ = self.create_date_num_col(self.data.test, last_index)

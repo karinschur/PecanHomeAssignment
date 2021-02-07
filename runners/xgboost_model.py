@@ -5,6 +5,7 @@ from typing import Dict
 
 from xgboost import XGBRegressor
 
+from utils import utils
 from preprocess.data_holder import DataHolder
 from preprocess.data_preprocess import Preprocessor
 
@@ -46,6 +47,6 @@ for (name, data), preprocessor in zip(data_after_preprocessors.items(), preproce
               verbose=True,
               early_stopping_rounds=10)
     pred_y = model.predict(data.test_x)
-    metrics_by_category = utils.results_metrics_by_category(pred_y_test, data.test_y, preprocessor.data.test)
-    utils.print_results_metrics(pred_y_test, data.test_y)
+    metrics_by_category = utils.results_metrics_by_category(pred_y, data.test_y, preprocessor.data.test)
+    utils.print_results_metrics(pred_y, data.test_y)
 
